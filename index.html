@@ -37,20 +37,14 @@
 
 <div id="carta">
   <div class="pagina activa">
-    <p>Hola,</p>
-    <p>Esta es la primera página de la carta.</p>
-  </div>
-  <div class="pagina">
-    <p>Esta es la segunda página.</p>
-  </div>
-  <div class="pagina">
-    <p>Y esta es la tercera.</p>
+    <p>Hola Yadirá.</p>
+    <p>No sé si esto sea raro, pero quería hacerte llegar algo distinto.</p>
+    <p>No es para impresionarte, solo para mostrarte una parte sincera de mí.</p>
+    <p>No es presión, solo intención.</p>
   </div>
 </div>
 
-<button onclick="paginaAnterior()">Anterior</button>
-<button onclick="paginaSiguiente()">Siguiente</button>
-<button onclick="iniciarAnimacion()">Ver la rosa</button>
+<button onclick="iniciarAnimacion()">Descubrir la sorpresa</button>
 
 <canvas id="lienzo-animacion"></canvas>
 
@@ -89,35 +83,48 @@
     const renderizador = new THREE.WebGLRenderer({ canvas: lienzo });
     renderizador.setSize(lienzo.clientWidth, lienzo.clientHeight);
 
-    // Partículas de la rosa
-    const geometria = new THREE.BufferGeometry();
-    const vertices = [];
-    const numParticulas = 10000;
-    const k = 5; // Número de pétalos
+    // Corazón galaxia
+    const geometriaCorazon = new THREE.ShapeGeometry(new THREE.Shape([
+      new THREE.Vector2(-0.5, -1.5),
+      new THREE.Vector2(-1.5, -0.5),
+      new THREE.Vector2(-1.5, 0.5),
+      new THREE.Vector2(-0.5, 1.5),
+      new THREE.Vector2(0.5, 1.5),
+      new THREE.Vector2(1.5, 0.5),
+      new THREE.Vector2(1.5, -0.5),
+      new THREE.Vector2(0.5, -1.5),
+      new THREE.Vector2(-0.5, -1.5)
+    ]));
+    const materialCorazon = new THREE.MeshBasicMaterial({
+      map: new THREE.TextureLoader().load('https://i.imgur.com/Side2wE.jpeg')
+    });
+    const corazon = new THREE.Mesh(geometriaCorazon, materialCorazon);
+    escena.add(corazon);
 
-    for (let i = 0; i < numParticulas; i++) {
-      const theta = THREE.MathUtils.randFloat(0, 2 * Math.PI);
-      const r = Math.cos(k * theta);
-      const phi = THREE.MathUtils.randFloat(-Math.PI, Math.PI);
-      vertices.push(
-        r * Math.cos(theta) * Math.sin(phi),
-        r * Math.sin(theta) * Math.sin(phi),
-        Math.cos(phi)
-      );
+    // Anillos de particulas
+    for (let i = 0; i < 3; i++) {
+      const geometriaAnillo = new THREE.RingGeometry(2 + i * 0.5, 2.1 + i * 0.5, 64);
+      const materialAnillo = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.1
+      });
+      const anillo = new THREE.Points(geometriaAnillo, materialAnillo);
+      anillo.rotation.x = Math.PI / 2;
+      anillo.rotation.y = Math.random() * Math.PI;
+      escena.add(anillo);
     }
-
-    geometria.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    const material = new THREE.PointsMaterial({ color: 0xff0000, size: 0.05 });
-    const puntos = new THREE.Points(geometria, material);
-    escena.add(puntos);
 
     camara.position.z = 5;
 
     // Animación
     function animar() {
       requestAnimationFrame(animar);
-      puntos.rotation.x += 0.001;
-      puntos.rotation.y += 0.001;
+      corazon.rotation.y += 0.01;
+      escena.children.forEach(hijo => {
+        if (hijo instanceof THREE.Points) {
+          hijo.rotation.z += 0.005;
+        }
+      });
       renderizador.render(escena, camara);
     }
 
