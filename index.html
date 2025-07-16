@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Una Carta Para Ti</title>
+<style>
+  body {
+    font-family: sans-serif;
+    text-align: center;
+  }
+  #stitch {
+    width: 200px;
+  }
+  #carta {
+    width: 80%;
+    margin: 0 auto;
+    text-align: left;
+    border: 1px solid #ccc;
+    padding: 20px;
+  }
+  .pagina {
+    display: none;
+  }
+  .pagina.activa {
+    display: block;
+  }
+  #lienzo-animacion {
+    display: none;
+    width: 100%;
+    height: 500px;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+<img id="stitch" src="https://i.imgur.com/Ozv2k4a.png" alt="Stitch">
+
+<div id="carta">
+  <div class="pagina activa">
+    <p>Hola,</p>
+    <p>Esta es la primera página de la carta.</p>
+  </div>
+  <div class="pagina">
+    <p>Esta es la segunda página.</p>
+  </div>
+  <div class="pagina">
+    <p>Y esta es la tercera.</p>
+  </div>
+</div>
+
+<button onclick="paginaAnterior()">Anterior</button>
+<button onclick="paginaSiguiente()">Siguiente</button>
+<button onclick="iniciarAnimacion()">Ver la rosa</button>
+
+<canvas id="lienzo-animacion"></canvas>
+
+<script>
+  let paginaActual = 0;
+  const paginas = document.querySelectorAll('.pagina');
+
+  function mostrarPagina(indice) {
+    paginas.forEach((pagina, i) => {
+      pagina.classList.toggle('activa', i === indice);
+    });
+  }
+
+  function paginaSiguiente() {
+    if (paginaActual < paginas.length - 1) {
+      paginaActual++;
+      mostrarPagina(paginaActual);
+    }
+  }
+
+  function paginaAnterior() {
+    if (paginaActual > 0) {
+      paginaActual--;
+      mostrarPagina(paginaActual);
+    }
+  }
+
+  function iniciarAnimacion() {
+    document.getElementById('carta').style.display = 'none';
+    const lienzo = document.getElementById('lienzo-animacion');
+    lienzo.style.display = 'block';
+
+    // Escena de Three.js
+    const escena = new THREE.Scene();
+    const camara = new THREE.PerspectiveCamera(75, lienzo.clientWidth / lienzo.clientHeight, 0.1, 1000);
+    const renderizador = new THREE.WebGLRenderer({ canvas: lienzo });
+    renderizador.setSize(lienzo.clientWidth, lienzo.clientHeight);
+
+    // Partículas de la rosa
+    const geometria = new THREE.BufferGeometry();
+    const vertices = [];
+    const numParticulas = 10000;
+    const k = 5; // Número de pétalos
+
+    for (let i = 0; i < numParticulas; i++) {
+      const theta = THREE.MathUtils.randFloat(0, 2 * Math.PI);
+      const r = Math.cos(k * theta);
+      const phi = THREE.MathUtils.randFloat(-Math.PI, Math.PI);
+      vertices.push(
+        r * Math.cos(theta) * Math.sin(phi),
+        r * Math.sin(theta) * Math.sin(phi),
+        Math.cos(phi)
+      );
+    }
+
+    geometria.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    const material = new THREE.PointsMaterial({ color: 0xff0000, size: 0.05 });
+    const puntos = new THREE.Points(geometria, material);
+    escena.add(puntos);
+
+    camara.position.z = 5;
+
+    // Animación
+    function animar() {
+      requestAnimationFrame(animar);
+      puntos.rotation.x += 0.001;
+      puntos.rotation.y += 0.001;
+      renderizador.render(escena, camara);
+    }
+
+    animar();
+  }
+
+  mostrarPagina(paginaActual);
+</script>
+
+</body>
+</html>
