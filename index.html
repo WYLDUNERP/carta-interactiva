@@ -3,73 +3,104 @@
 <head>
 <title>Una Carta Para Ti</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
   body {
-    font-family: sans-serif;
+    font-family: 'Montserrat', sans-serif;
     text-align: center;
+    background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
+    color: white;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
   }
+
+  #container {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  }
+
   #stitch {
     width: 200px;
+    cursor: pointer;
+    transition: transform 0.3s;
   }
+
+  #stitch:hover {
+    transform: scale(1.1);
+  }
+
   #carta {
     width: 80%;
-    margin: 0 auto;
-    text-align: left;
-    border: 1px solid #ccc;
+    margin: 20px auto;
+    text-align: center;
+    border: none;
     padding: 20px;
-  }
-  .pagina {
     display: none;
+    animation: fadeIn 1s;
   }
+
   .pagina.activa {
     display: block;
   }
+
   #lienzo-animacion {
     display: none;
     width: 100%;
     height: 500px;
+    animation: fadeIn 1s;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  button {
+    background: #fdbb2d;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.2em;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  button:hover {
+    background: #b21f1f;
   }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-<img id="stitch" src="https://i.imgur.com/Ozv2k4a.png" alt="Stitch">
+<div id="container">
+  <img id="stitch" src="https://i.imgur.com/Ozv2k4a.png" alt="Stitch" onclick="mostrarCarta()" onerror="this.src='https://via.placeholder.com/200'">
 
-<div id="carta">
-  <div class="pagina activa">
-    <p>Hola Yadirá.</p>
-    <p>No sé si esto sea raro, pero quería hacerte llegar algo distinto.</p>
-    <p>No es para impresionarte, solo para mostrarte una parte sincera de mí.</p>
-    <p>No es presión, solo intención.</p>
+  <div id="carta">
+    <div class="pagina activa">
+      <p>Hola Yadirá.</p>
+      <p>No sé si esto sea raro, pero quería hacerte llegar algo distinto.</p>
+      <p>No es para impresionarte, solo para mostrarte una parte sincera de mí.</p>
+      <p>No es presión, solo intención.</p>
+    </div>
+    <button onclick="iniciarAnimacion()">Descubrir la sorpresa</button>
   </div>
+
+  <canvas id="lienzo-animacion"></canvas>
 </div>
 
-<button onclick="iniciarAnimacion()">Descubrir la sorpresa</button>
-
-<canvas id="lienzo-animacion"></canvas>
-
 <script>
-  let paginaActual = 0;
-  const paginas = document.querySelectorAll('.pagina');
-
-  function mostrarPagina(indice) {
-    paginas.forEach((pagina, i) => {
-      pagina.classList.toggle('activa', i === indice);
-    });
-  }
-
-  function paginaSiguiente() {
-    if (paginaActual < paginas.length - 1) {
-      paginaActual++;
-      mostrarPagina(paginaActual);
-    }
-  }
-
-  function paginaAnterior() {
-    if (paginaActual > 0) {
-      paginaActual--;
-      mostrarPagina(paginaActual);
-    }
+  function mostrarCarta() {
+    document.getElementById('stitch').style.display = 'none';
+    document.getElementById('carta').style.display = 'block';
   }
 
   function iniciarAnimacion() {
@@ -95,36 +126,70 @@
       new THREE.Vector2(0.5, -1.5),
       new THREE.Vector2(-0.5, -1.5)
     ]));
-    const materialCorazon = new THREE.MeshBasicMaterial({
-      map: new THREE.TextureLoader().load('https://i.imgur.com/Side2wE.jpeg')
-    });
+    const textureLoader = new THREE.TextureLoader();
+    const galaxyTexture = textureLoader.load(
+      'https://i.imgur.com/Side2wE.jpeg',
+      undefined,
+      undefined,
+      () => {
+        // Fallback texture
+        const fallbackTexture = textureLoader.load('https://via.placeholder.com/512');
+        corazon.material.map = fallbackTexture;
+        corazon.material.needsUpdate = true;
+      }
+    );
+    const materialCorazon = new THREE.MeshBasicMaterial({ map: galaxyTexture });
     const corazon = new THREE.Mesh(geometriaCorazon, materialCorazon);
     escena.add(corazon);
 
     // Anillos de particulas
-    for (let i = 0; i < 3; i++) {
-      const geometriaAnillo = new THREE.RingGeometry(2 + i * 0.5, 2.1 + i * 0.5, 64);
+    const anillos = [];
+    for (let i = 0; i < 5; i++) {
+      const geometriaAnillo = new THREE.RingGeometry(2 + i * 0.5, 2.1 + i * 0.5, 128);
       const materialAnillo = new THREE.PointsMaterial({
         color: 0xffffff,
-        size: 0.1
+        size: 0.05 + Math.random() * 0.05
       });
       const anillo = new THREE.Points(geometriaAnillo, materialAnillo);
-      anillo.rotation.x = Math.PI / 2;
+      anillo.rotation.x = Math.random() * Math.PI;
       anillo.rotation.y = Math.random() * Math.PI;
+      anillo.userData.velocidad = (Math.random() - 0.5) * 0.01;
       escena.add(anillo);
+      anillos.push(anillo);
     }
 
-    camara.position.z = 5;
+    // Partículas de fondo
+    const geometriaParticulas = new THREE.BufferGeometry();
+    const vertices = [];
+    for (let i = 0; i < 1000; i++) {
+      vertices.push(
+        (Math.random() - 0.5) * 20,
+        (Math.random() - 0.5) * 20,
+        (Math.random() - 0.5) * 20
+      );
+    }
+    geometriaParticulas.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    const materialParticulas = new THREE.PointsMaterial({ color: 0xffffff, size: 0.02 });
+    const particulas = new THREE.Points(geometriaParticulas, materialParticulas);
+    escena.add(particulas);
+
+    camara.position.z = 10;
 
     // Animación
+    let tiempo = 0;
     function animar() {
       requestAnimationFrame(animar);
-      corazon.rotation.y += 0.01;
-      escena.children.forEach(hijo => {
-        if (hijo instanceof THREE.Points) {
-          hijo.rotation.z += 0.005;
-        }
+      tiempo += 0.01;
+
+      corazon.rotation.y += 0.005;
+      corazon.scale.setScalar(1 + Math.sin(tiempo) * 0.1);
+
+      anillos.forEach(anillo => {
+        anillo.rotation.z += anillo.userData.velocidad;
       });
+
+      particulas.rotation.y += 0.001;
+
       renderizador.render(escena, camara);
     }
 
