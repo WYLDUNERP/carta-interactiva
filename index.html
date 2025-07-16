@@ -56,13 +56,21 @@
   }
 
   .pagina p {
-    opacity: 0;
-    animation: fadeIn 1s forwards;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 0.15em solid orange;
+    animation: typing 2.5s steps(30, end), blink-caret 0.75s step-end infinite;
+    width: 0;
   }
 
-  @keyframes maquina-escribir {
+  @keyframes typing {
     from { width: 0; }
     to { width: 100%; }
+  }
+
+  @keyframes blink-caret {
+    from, to { border-color: transparent; }
+    50% { border-color: orange; }
   }
 
   .pagina.activa {
@@ -103,16 +111,13 @@
 <body>
 
 <div id="container">
-  <div id="carta" onclick="this.classList.toggle('abierta')">
-    <div class="pagina pagina-frontal">
-      <p>Haz clic para abrir</p>
-    </div>
+  <div id="carta">
     <div class="pagina pagina-trasera">
-      <p style="animation-delay: 0.5s;">Hola Yadirá.</p>
-      <p style="animation-delay: 1.5s;">No sé si esto sea raro, pero quería hacerte llegar algo distinto.</p>
-      <p style="animation-delay: 3s;">No es para impresionarte, solo para mostrarte una parte sincera de mí.</p>
-      <p style="animation-delay: 4.5s;">No es presión, solo intención.</p>
-      <button onclick="iniciarAnimacion(event)">Descubrir la sorpresa</button>
+      <p style="animation-delay: 0s;">Hola Yadirá.</p>
+      <p style="animation-delay: 2.5s;">No sé si esto sea raro, pero quería hacerte llegar algo distinto.</p>
+      <p style="animation-delay: 5s;">No es para impresionarte, solo para mostrarte una parte sincera de mí.</p>
+      <p style="animation-delay: 7.5s;">No es presión, solo intención.</p>
+      <button onclick="iniciarAnimacion()" style="animation-delay: 10s;">Descubrir la sorpresa</button>
     </div>
   </div>
 
@@ -120,12 +125,6 @@
 </div>
 
 <script>
-  function iniciarAnimacion(event) {
-    event.stopPropagation();
-    document.getElementById('carta').style.display = 'none';
-    const lienzo = document.getElementById('lienzo-animacion');
-    lienzo.style.display = 'block';
-
   function iniciarAnimacion() {
     document.getElementById('carta').style.display = 'none';
     const lienzo = document.getElementById('lienzo-animacion');
