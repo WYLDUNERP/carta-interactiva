@@ -8,8 +8,8 @@
   body {
     font-family: 'Montserrat', sans-serif;
     text-align: center;
-    background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
-    color: white;
+    background: linear-gradient(to right, #ffafbd, #ffc3a0);
+    color: #333;
     overflow: hidden;
     margin: 0;
     padding: 0;
@@ -42,8 +42,27 @@
     text-align: center;
     border: none;
     padding: 20px;
-    display: none;
-    animation: fadeIn 1s;
+    display: block;
+    background: white;
+    color: #333;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transform-style: preserve-3d;
+    transition: transform 1s;
+  }
+
+  #carta.abierta {
+    transform: rotateY(180deg);
+  }
+
+  .pagina p {
+    opacity: 0;
+    animation: fadeIn 1s forwards;
+  }
+
+  @keyframes maquina-escribir {
+    from { width: 0; }
+    to { width: 100%; }
   }
 
   .pagina.activa {
@@ -63,18 +82,20 @@
   }
 
   button {
-    background: #fdbb2d;
+    background: #ff7e5f;
     color: white;
     border: none;
     padding: 15px 30px;
     font-size: 1.2em;
-    border-radius: 5px;
+    border-radius: 25px;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: background 0.3s, transform 0.3s;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   }
 
   button:hover {
-    background: #b21f1f;
+    background: #feb47b;
+    transform: translateY(-3px);
   }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -82,26 +103,28 @@
 <body>
 
 <div id="container">
-  <img id="stitch" src="https://i.imgur.com/Ozv2k4a.png" alt="Stitch" onclick="mostrarCarta()" onerror="this.src='https://via.placeholder.com/200'">
-
-  <div id="carta">
-    <div class="pagina activa">
-      <p>Hola Yadirá.</p>
-      <p>No sé si esto sea raro, pero quería hacerte llegar algo distinto.</p>
-      <p>No es para impresionarte, solo para mostrarte una parte sincera de mí.</p>
-      <p>No es presión, solo intención.</p>
+  <div id="carta" onclick="this.classList.toggle('abierta')">
+    <div class="pagina pagina-frontal">
+      <p>Haz clic para abrir</p>
     </div>
-    <button onclick="iniciarAnimacion()">Descubrir la sorpresa</button>
+    <div class="pagina pagina-trasera">
+      <p style="animation-delay: 0.5s;">Hola Yadirá.</p>
+      <p style="animation-delay: 1.5s;">No sé si esto sea raro, pero quería hacerte llegar algo distinto.</p>
+      <p style="animation-delay: 3s;">No es para impresionarte, solo para mostrarte una parte sincera de mí.</p>
+      <p style="animation-delay: 4.5s;">No es presión, solo intención.</p>
+      <button onclick="iniciarAnimacion(event)">Descubrir la sorpresa</button>
+    </div>
   </div>
 
   <canvas id="lienzo-animacion"></canvas>
 </div>
 
 <script>
-  function mostrarCarta() {
-    document.getElementById('stitch').style.display = 'none';
-    document.getElementById('carta').style.display = 'block';
-  }
+  function iniciarAnimacion(event) {
+    event.stopPropagation();
+    document.getElementById('carta').style.display = 'none';
+    const lienzo = document.getElementById('lienzo-animacion');
+    lienzo.style.display = 'block';
 
   function iniciarAnimacion() {
     document.getElementById('carta').style.display = 'none';
@@ -114,33 +137,35 @@
     const renderizador = new THREE.WebGLRenderer({ canvas: lienzo });
     renderizador.setSize(lienzo.clientWidth, lienzo.clientHeight);
 
-    // Corazón galaxia
-    const geometriaCorazon = new THREE.ShapeGeometry(new THREE.Shape([
-      new THREE.Vector2(-0.5, -1.5),
-      new THREE.Vector2(-1.5, -0.5),
-      new THREE.Vector2(-1.5, 0.5),
-      new THREE.Vector2(-0.5, 1.5),
-      new THREE.Vector2(0.5, 1.5),
-      new THREE.Vector2(1.5, 0.5),
-      new THREE.Vector2(1.5, -0.5),
-      new THREE.Vector2(0.5, -1.5),
-      new THREE.Vector2(-0.5, -1.5)
-    ]));
-    const textureLoader = new THREE.TextureLoader();
-    const galaxyTexture = textureLoader.load(
-      'https://i.imgur.com/Side2wE.jpeg',
-      undefined,
-      undefined,
-      () => {
-        // Fallback texture
-        const fallbackTexture = textureLoader.load('https://via.placeholder.com/512');
-        corazon.material.map = fallbackTexture;
-        corazon.material.needsUpdate = true;
-      }
-    );
-    const materialCorazon = new THREE.MeshBasicMaterial({ map: galaxyTexture });
-    const corazon = new THREE.Mesh(geometriaCorazon, materialCorazon);
-    escena.add(corazon);
+    // Corazón de partículas
+    const geometriaParticulas = new THREE.BufferGeometry();
+    const vertices = [];
+    const colores = [];
+    const numParticulas = 10000;
+
+    for (let i = 0; i < numParticulas; i++) {
+      const t = Math.random() * 2 * Math.PI;
+      const x = 16 * Math.pow(Math.sin(t), 3);
+      const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+      vertices.push(x / 10, y / 10, (Math.random() - 0.5) * 2);
+
+      const color = new THREE.Color();
+      color.setHSL(Math.random(), 1.0, 0.5);
+      colores.push(color.r, color.g, color.b);
+    }
+
+    geometriaParticulas.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometriaParticulas.setAttribute('color', new THREE.Float32BufferAttribute(colores, 3));
+
+    const materialParticulas = new THREE.PointsMaterial({
+      size: 0.2,
+      vertexColors: true,
+      blending: THREE.AdditiveBlending,
+      transparent: true
+    });
+
+    const corazonParticulas = new THREE.Points(geometriaParticulas, materialParticulas);
+    escena.add(corazonParticulas);
 
     // Anillos de particulas
     const anillos = [];
@@ -179,16 +204,16 @@
     let tiempo = 0;
     function animar() {
       requestAnimationFrame(animar);
-      tiempo += 0.01;
+      tiempo += 0.005;
 
-      corazon.rotation.y += 0.005;
-      corazon.scale.setScalar(1 + Math.sin(tiempo) * 0.1);
+      corazonParticulas.rotation.y += 0.001;
+      corazonParticulas.scale.setScalar(1 + Math.sin(tiempo * 2) * 0.05);
 
       anillos.forEach(anillo => {
-        anillo.rotation.z += anillo.userData.velocidad;
+        anillo.rotation.z += anillo.userData.velocidad * 0.5;
       });
 
-      particulas.rotation.y += 0.001;
+      particulas.rotation.y += 0.0005;
 
       renderizador.render(escena, camara);
     }
