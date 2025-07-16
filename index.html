@@ -56,21 +56,9 @@
   }
 
   .pagina p {
-    overflow: hidden;
-    white-space: nowrap;
     border-right: 0.15em solid orange;
-    animation: typing 2.5s steps(30, end), blink-caret 0.75s step-end infinite;
-    width: 0;
-  }
-
-  @keyframes typing {
-    from { width: 0; }
-    to { width: 100%; }
-  }
-
-  @keyframes blink-caret {
-    from, to { border-color: transparent; }
-    50% { border-color: orange; }
+    white-space: pre;
+    overflow: hidden;
   }
 
   .pagina.activa {
@@ -125,31 +113,77 @@
 </div>
 
 <script>
+  function typeWriter(element, text, i, callback) {
+    if (i < text.length) {
+      element.innerHTML = text.substring(0, i + 1) + '<span class="caret"></span>';
+      setTimeout(() => typeWriter(element, text, i + 1, callback), 50);
+    } else if (callback) {
+      element.innerHTML = text; // Remove caret
+      callback();
+    }
+  }
+
+  function startTyping() {
+    const paragraphs = document.querySelectorAll('.pagina-trasera p');
+    let pIndex = 0;
+
+    function typeNextParagraph() {
+      if (pIndex < paragraphs.length) {
+        const p = paragraphs[pIndex];
+        const text = p.getAttribute('data-text');
+        p.style.display = 'block';
+        typeWriter(p, text, 0, () => {
+          pIndex++;
+          setTimeout(typeNextParagraph, 500); // Delay between paragraphs
+        });
+      } else {
+        document.querySelector('.pagina-trasera button').style.display = 'block';
+      }
+    }
+
+    typeNextParagraph();
+  }
+
   function iniciarAnimacion() {
     document.getElementById('carta').style.display = 'none';
-    const lienzo = document.getElementById('lienzo-animacion');
-    lienzo.style.display = 'block';
+    document.getElementById('lienzo-animacion').style.display = 'block';
+  }
 
-    // Escena de Three.js
+  document.addEventListener('DOMContentLoaded', function() {
+    const paragraphs = document.querySelectorAll('.pagina-trasera p');
+    paragraphs.forEach(p => {
+      p.setAttribute('data-text', p.innerHTML);
+      p.innerHTML = '';
+      p.style.display = 'none';
+    });
+    document.querySelector('.pagina-trasera button').style.display = 'none';
+
+    document.getElementById('carta').addEventListener('click', function() {
+      if (!this.classList.contains('abierta')) {
+        this.classList.add('abierta');
+        startTyping();
+      }
+    });
+
+    const lienzo = document.getElementById('lienzo-animacion');
     const escena = new THREE.Scene();
     const camara = new THREE.PerspectiveCamera(75, lienzo.clientWidth / lienzo.clientHeight, 0.1, 1000);
-    const renderizador = new THREE.WebGLRenderer({ canvas: lienzo });
+    const renderizador = new THREE.WebGLRenderer({ canvas: lienzo, alpha: true });
     renderizador.setSize(lienzo.clientWidth, lienzo.clientHeight);
 
-    // Corazón de partículas
     const geometriaParticulas = new THREE.BufferGeometry();
     const vertices = [];
     const colores = [];
-    const numParticulas = 10000;
+    const numParticulas = 15000;
 
     for (let i = 0; i < numParticulas; i++) {
       const t = Math.random() * 2 * Math.PI;
       const x = 16 * Math.pow(Math.sin(t), 3);
       const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-      vertices.push(x / 10, y / 10, (Math.random() - 0.5) * 2);
+      vertices.push(x / 12, y / 12, (Math.random() - 0.5) * 2.5);
 
       const color = new THREE.Color();
-      color.setHSL(Math.random(), 1.0, 0.5);
+      color.setHSL(Math.random(), 0.8, 0.6);
       colores.push(color.r, color.g, color.b);
     }
 
@@ -157,70 +191,52 @@
     geometriaParticulas.setAttribute('color', new THREE.Float32BufferAttribute(colores, 3));
 
     const materialParticulas = new THREE.PointsMaterial({
-      size: 0.2,
+      size: 0.15,
       vertexColors: true,
       blending: THREE.AdditiveBlending,
-      transparent: true
+      transparent: true,
+      opacity: 0.8
     });
 
     const corazonParticulas = new THREE.Points(geometriaParticulas, materialParticulas);
     escena.add(corazonParticulas);
 
-    // Anillos de particulas
     const anillos = [];
-    for (let i = 0; i < 5; i++) {
-      const geometriaAnillo = new THREE.RingGeometry(2 + i * 0.5, 2.1 + i * 0.5, 128);
+    for (let i = 0; i < 7; i++) {
+      const geometriaAnillo = new THREE.RingGeometry(2.5 + i * 0.6, 2.6 + i * 0.6, 128);
       const materialAnillo = new THREE.PointsMaterial({
         color: 0xffffff,
-        size: 0.05 + Math.random() * 0.05
+        size: 0.08 + Math.random() * 0.05,
+        transparent: true,
+        opacity: 0.5
       });
       const anillo = new THREE.Points(geometriaAnillo, materialAnillo);
       anillo.rotation.x = Math.random() * Math.PI;
       anillo.rotation.y = Math.random() * Math.PI;
-      anillo.userData.velocidad = (Math.random() - 0.5) * 0.01;
+      anillo.userData.velocidad = (Math.random() - 0.5) * 0.008;
       escena.add(anillo);
       anillos.push(anillo);
     }
 
-    // Partículas de fondo
-    const geometriaParticulas = new THREE.BufferGeometry();
-    const vertices = [];
-    for (let i = 0; i < 1000; i++) {
-      vertices.push(
-        (Math.random() - 0.5) * 20,
-        (Math.random() - 0.5) * 20,
-        (Math.random() - 0.5) * 20
-      );
-    }
-    geometriaParticulas.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    const materialParticulas = new THREE.PointsMaterial({ color: 0xffffff, size: 0.02 });
-    const particulas = new THREE.Points(geometriaParticulas, materialParticulas);
-    escena.add(particulas);
+    camara.position.z = 12;
 
-    camara.position.z = 10;
-
-    // Animación
     let tiempo = 0;
     function animar() {
       requestAnimationFrame(animar);
-      tiempo += 0.005;
+      tiempo += 0.008;
 
-      corazonParticulas.rotation.y += 0.001;
-      corazonParticulas.scale.setScalar(1 + Math.sin(tiempo * 2) * 0.05);
+      corazonParticulas.rotation.y += 0.002;
+      corazonParticulas.scale.setScalar(1 + Math.sin(tiempo * 2.5) * 0.08);
 
       anillos.forEach(anillo => {
-        anillo.rotation.z += anillo.userData.velocidad * 0.5;
+        anillo.rotation.z += anillo.userData.velocidad;
       });
-
-      particulas.rotation.y += 0.0005;
 
       renderizador.render(escena, camara);
     }
 
     animar();
-  }
-
-  mostrarPagina(paginaActual);
+  });
 </script>
 
 </body>
